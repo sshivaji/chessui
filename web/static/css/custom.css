@@ -1,0 +1,189 @@
+
+.gameVariation {
+    font-size: 1.4vw;
+    display: block;
+    margin-left: 5vw;
+    margin-top: 0.6vw;
+    margin-bottom: 0.6vw;
+}
+
+.gameVariation .gameMoves {
+    font-weight: normal;
+}
+
+.comment {
+    font-size: 1.4vw;
+    display: block;
+    margin-top: 0.6vw;
+    margin-bottom: 0.6vw;
+    color: green;
+    font-weight: normal;
+}
+
+.gameMoves {
+    font-size: 1.5vw;
+    font-weight: bolder;
+    line-height: 150%;
+    font-family: Tahoma, Geneva, sans-serif;
+}
+
+.gameMoves .highlight {
+    color: darkgreen;
+    font-size: 1.6vw;
+}
+
+.gameMoves a {
+    text-decoration: none;
+}
+
+.gameResult {
+    font-size: 1.8vw;
+}
+
+#gameControls button {
+    padding: 4px 1vw;
+}
+
+#pgn h4 {
+    font-size: 1.8vw;
+}
+#pgn h5 {
+    font-size: 1.6vw;
+}
+
+.panel-heading {
+    overflow: hidden;
+}
+
+.flat-table tr:nth-of-type(even) {
+    background: transparent;
+}
+
+.flat-table a {
+    color: #808080;
+}
+
+.flat-table {
+    margin-bottom: 20px;
+    border-collapse: collapse;
+    font-family: Calibri, Arial, sans-serif;
+    border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+}
+
+.flat-table th {
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    padding: 1em;
+    color: rgba(0, 0, 0, 0.45);
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+    font-size: 1.3em;
+    text-align: center !important;
+}
+
+.flat-table td {
+    padding: 0.7em 1em 0.7em 1.15em;
+    font-size: 1.2em;
+    font-weight: normal;
+    text-align: center !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.flat-table tr {
+    -webkit-transition: background 0.3s, box-shadow 0.3s;
+    -moz-transition: background 0.3s, box-shadow 0.3s;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.flat-table-1 {
+    background: #fffaf0;
+
+}
+
+.flat-table-1 tr:hover {
+    background-color: rgba(0, 0, 0, 0.19);
+}
+
+.panel-heading > .nav-tabs {
+    border-bottom: none;
+    margin-bottom: -10px;
+    overflow: visible;
+
+}
+
+.panel .panel-borderless .panel-primary {
+    border: 0;
+    box-shadow: none;
+}
+
+.text-break {
+    white-space: normal;
+}
+
+@media (max-width: 479px) {
+    .text-break-xs { white-space: normal; }
+}
+@media (min-width: 480px) and (max-width: 767px) {
+    .text-break-sm { white-space: normal; }
+}
+@media (min-width: 768px) and (max-width: 991px) {
+    .text-break-md { white-space: normal; }
+}
+
+@media only screen and (max-width: 767px) {
+	.flip-scroll .cf:after { visibility: hidden; display: block; font-size: 0; content: " "; clear: both; height: 0; }
+	.flip-scroll * html .cf { zoom: 1; }
+	.flip-scroll *:first-child+html .cf { zoom: 1; }
+
+	.flip-scroll table { width: 100%; border-collapse: collapse; border-spacing: 0; }
+
+	.flip-scroll th,
+	.flip-scroll td { margin: 0; vertical-align: top; }
+	.flip-scroll th { text-align: left; }
+
+	.flip-scroll table { display: block; position: relative; width: 100%; }
+	.flip-scroll thead { display: block; float: left; }
+	.flip-scroll tbody { display: block; width: auto; position: relative; overflow-x: auto; white-space: nowrap; }
+	.flip-scroll thead tr { display: block; }
+	.flip-scroll th { display: block; text-align: right; }
+	.flip-scroll tbody tr { display: inline-block; vertical-align: top; }
+	.flip-scroll td { display: block; min-height: 1.25em; text-align: left; }
+
+	/* sort out borders */
+	.flip-scroll th { border-bottom: 0; border-left: 0; }
+	.flip-scroll td { border-left: 0; border-right: 0; border-bottom: 0; }
+	.flip-scroll tbody tr { border-left: 1px solid #babcbf; }
+	.flip-scroll th:last-child,
+	.flip-scroll td:last-child { border-bottom: 1px solid #babcbf; }
+}
+
+body {
+    font-size: 1vw;
+}
+
+#BoardStatus {
+    font-size: 1.2vw;
+}
+
+#DGTClockStatus {
+    font-size: 1.2vw;
+}
+
+#gameControls .btn {
+    margin: 0 1px;
+}
+
+.dynatable-record-count {
+    float: right;
+}
+
+.pagination {
+    margin: 0;
+}
+
+.btn {
+    margin: 5px 1px;
+}

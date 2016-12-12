@@ -45,6 +45,7 @@ var board,
     pgnEl = $('#pgn');
 var gameHistory, fenHash, currentPosition;
 var backend_server_prefix = 'http://drshivaji.com:3334';
+var backend_server_prefix = '/backend';
 
 fenHash = {};
 

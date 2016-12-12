@@ -48,7 +48,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             url(r"/", ChessBoardHandler, dict(shared=shared)),
-            # url(r"/query", ChessQueryHandler, dict(shared=shared)),
+            url(r"/backend/query", ChessQueryHandler, dict(shared=shared)),
             # url(r"/cloud", ChessCloudHandler, dict(shared=shared)),
             # url(r"/user_login", UserLoginHandler),
             # url(r"/google_auth", GoogleOAuth2LoginHandler),

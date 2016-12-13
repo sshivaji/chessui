@@ -116,7 +116,7 @@ function goToDGTFen() {
 }
 
 $(function() {
-    getSystemInfo();
+//    getSystemInfo();
     // JP! is this really needed?!?
     $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         window.activedb = e.target.hash;
@@ -232,40 +232,42 @@ $(function() {
     });
     updateStatus();
 
-    window.WebSocket = window.WebSocket || window.MozWebSocket || false;
-    if (!window.WebSocket) {
-        alert('No WebSocket Support');
-    }
-    else {
-        var ws = new WebSocket('ws://' + location.host + '/event');
-        // Process messages from picochess
-        ws.onmessage = function(e) {
-            var data = JSON.parse(e.data);
-            if ('msg' in data) {
-                dgtClockStatusEl.html(data.msg);
-            }
-            switch (data.event) {
-                case 'newFEN':
-                    updateDGTPosition(data);
-                    updateStatus();
-                    break;
-                case 'NewGame':
-                    newBoard(data.fen);
-                    break;
-                case 'Message':
-                    dgtClockStatusEl.html(data.msg);
-                    break;
-                case 'header':
-                    setHeaders(data['headers']);
-                    break;
-                default:
-                    console.warn(data);
-            }
-        };
-        ws.onclose = function() {
-            dgtClockStatusEl.html('closed');
-        };
-    }
+// Shiv: ChessUI does not need websocket support, we can uncomment and reuse if needed!
+
+//    window.WebSocket = window.WebSocket || window.MozWebSocket || false;
+//    if (!window.WebSocket) {
+//        alert('No WebSocket Support');
+//    }
+//    else {
+//        var ws = new WebSocket('ws://' + location.host + '/event');
+//        // Process messages from picochess
+//        ws.onmessage = function(e) {
+//            var data = JSON.parse(e.data);
+//            if ('msg' in data) {
+//                dgtClockStatusEl.html(data.msg);
+//            }
+//            switch (data.event) {
+//                case 'newFEN':
+//                    updateDGTPosition(data);
+//                    updateStatus();
+//                    break;
+//                case 'NewGame':
+//                    newBoard(data.fen);
+//                    break;
+//                case 'Message':
+//                    dgtClockStatusEl.html(data.msg);
+//                    break;
+//                case 'header':
+//                    setHeaders(data['headers']);
+//                    break;
+//                default:
+//                    console.warn(data);
+//            }
+//        };
+//        ws.onclose = function() {
+//            dgtClockStatusEl.html('closed');
+//        };
+//    }
 
     if (navigator.mimeTypes['application/x-pnacl'] !== undefined) {
         $('#analyzeBtn').prop('disabled', true);

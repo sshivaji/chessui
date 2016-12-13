@@ -3,6 +3,7 @@ import tornado
 from handlers.basic_handler import BasicHandler
 from tornado.escape import json_encode
 
+
 class ChessBoardHandler(BasicHandler):
     def initialize(self, shared=None):
         self.shared = shared
@@ -23,6 +24,8 @@ class ChessQueryHandler(BasicHandler):
             requested_db = self.get_argument("db", default=None)
             # INDEX_DB = 'resources/polyglot_index.db'
             # DATABASE = 'resources/game.db'
+
+            logging.info("requested_db: {0}".format(requested_db))
 
             fen = self.get_argument("fen", default=None)
             logging.info("fen : {0}".format(fen))

@@ -187,3 +187,16 @@ body {
 .btn {
     margin: 5px 1px;
 }
+
+.dynatable-search {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  float:left;
+}
+
+.dynatable-per-page {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  float:right;
+}
+

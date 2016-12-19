@@ -94,51 +94,37 @@ class ChessQueryHandler(BasicHandler):
 
             if action == "get_book_moves":
                 logging.info("get book moves :: ")
-                # selecting DB happens now
-                self.chessDB.open(MILLIONBASE_PGN)
-                results = self.chessDB.find(fen, max_offsets=10)
-                # print(type(results))
-                board = chess.Board(fen)
+                records = self.query_db(fen)
 
-                for m in results['moves']:
-                    # print(m)
-                    m['san']= board.san(chess.Move.from_uci(m['move']))
-                    record = {'move': m['san'], 'pct': "{0:.2f}".format((m['wins']+m['draws']*0.5)*100.0/(m['wins']+m['draws']+m['losses'])), 'freq': m['games'], 'wins': m['wins'],
-                              'draws': m['draws'], 'losses': m['losses'], 'games': int(m['games'])}
-                    records.append(record)
                 # Reverse sort by the number of games and select the top 5, otherwise all odd moves will show up..
                 records.sort(key=lambda x: x['games'], reverse=True)
                 results = {"records": records[:5]}
 
             elif action == "get_games":
                 logging.info("get_games :: ")
-                # selecting DB happens now
-                # self.chessDB.open(MILLIONBASE_PGN)
-                # results = self.chessDB.find(fen, max_offsets=10)
-                # print(results)
-                g = {}
-                g['id'] = 1
-                g['white'] = 'w'
-                g['black'] = 'black'
-                g['white_elo'] = '2500'
-                g['black_elo'] = '2500'
-                g['result'] = '1-0'
-                g['date'] = ''
-                g['event'] = 'Mock'
-                g['site'] = 'Site'
-                g['eco'] = 'eco'
-                records.append({"id": g['id'], "white": g['white'], "white_elo": g['white_elo'], "black": g['black'],
-                                "black_elo": g['black_elo'], "result": g['result'], "date": g['date'],
-                                "event": g['event'], "site": g['site'],
-                                "eco": g['eco']})
 
-                results = {"records": records, "queryRecordCount": 1,
-                           "totalRecordCount": 1}
+                records = self.query_db(fen)
+                # Reverse sort by the number of games and select the top 5, for a balanced representation of the games
+                records.sort(key=lambda x: x['games'], reverse=True)
+                filtered_records = records[:5]
+
+                filtered_game_offsets = []
+                # Limit number of games to 10 for now
+                for r in filtered_records:
+                    for offset in r['pgn offsets']:
+                        # print("offset: {0}".format(offset))
+                        if len(filtered_game_offsets) >= 10:
+                            break
+                        filtered_game_offsets.append(offset)
+
+                headers = self.chessDB.get_game_headers(self.chessDB.get_games(filtered_game_offsets))
+                results = {"records": headers, "queryRecordCount": 1,
+                           "totalRecordCount": len(headers)}
 
             elif action == "get_game_content":
                 game_num = self.get_argument("game_num", default=0)
-                # if game_num:
-                #     # print "game_num : {0}".format(game_num)
+                if game_num:
+                    print("game_num : {0}".format(game_num))
                 #     pgn = self.get_game(db_index, int(game_num))
                 #     # print "callback.."
                 #     if callback:
@@ -178,3 +164,19 @@ class ChessQueryHandler(BasicHandler):
                 # sf.go(depth=1)
         except tornado.web.MissingArgumentError:
             pass
+
+    def query_db(self, fen, max_offsets = 10):
+        records = []
+        # selecting DB happens now
+        self.chessDB.open(MILLIONBASE_PGN)
+        results = self.chessDB.find(fen, max_offsets = max_offsets)
+        board = chess.Board(fen)
+        for m in results['moves']:
+            # print(m)
+            m['san'] = board.san(chess.Move.from_uci(m['move']))
+            record = {'move': m['san'], 'pct': "{0:.2f}".format(
+                (m['wins'] + m['draws'] * 0.5) * 100.0 / (m['wins'] + m['draws'] + m['losses'])), 'freq': m['games'],
+                      'wins': m['wins'],
+                      'draws': m['draws'], 'losses': m['losses'], 'games': int(m['games']), 'pgn offsets': m['pgn offsets']}
+            records.append(record)
+        return records

@@ -8,3 +8,4 @@ requests==2.9.1
 tornado==4.4.2
 configobj==5.0.6
 pexpect==4.2.1
+git+git://github.com/vukasin/tornado-subprocess.git

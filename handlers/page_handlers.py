@@ -1,8 +1,22 @@
+import json
 import logging
+import time
 import tornado
+
+
+from external import scoutfish
+from external import chess_db
 from handlers.basic_handler import BasicHandler
 from tornado.escape import json_encode
+from tornado.ioloop import IOLoop
+from tornado.web import asynchronous
+from multiprocessing.pool import ThreadPool
 
+_workers = ThreadPool(5)
+
+SCOUTFISH_EXEC = './external/scoutfish'
+CHESSDB_EXEC = './external/parser'
+MILLIONBASE_PGN = './bases/millionbase.pgn'
 
 class ChessBoardHandler(BasicHandler):
     def initialize(self, shared=None):
@@ -16,8 +30,52 @@ class ChessQueryHandler(BasicHandler):
     def initialize(self, shared=None):
         self.shared = shared
 
+    @staticmethod
+    def run_background(func, callback, args=(), kwds=None):
+        if not kwds:
+            kwds = {}
+
+        def _callback(result):
+            IOLoop.instance().add_callback(lambda: callback(result))
+
+        _workers.apply_async(func, args, kwds, _callback)
+
+    # blocking task like querying to MySQL
+    def blocking_task(self, n):
+        # time.sleep(n)
+        logging.info("called blocking task")
+        # if not self.get_user_cookie_hash() in self.shared:
+        #     self.start_cloud_engine()
+        time.sleep(10)
+        logging.info("done with blocking task!!")
+        return n
+
+    def on_complete_blocking_task(self, res):
+        self.write("Blocking Task Complete {0}<br/>".format(res))
+        logging.info("on_complete_blocking_task")
+        self.finish()
+
+    @asynchronous
     def get(self):
         try:
+            ## This is created on server init
+            if 'chessDB' not in self.shared:
+                self.chessDB = chess_db.Parser(CHESSDB_EXEC)
+                self.shared['chessDB'] = self.chessDB
+                # print("Creating chessDB in shared")
+            else:
+                self.chessDB = self.shared['chessDB']
+
+            ## This is created on server init
+            if 'scoutfish' not in self.shared:
+                self.scoutfish = scoutfish.Scoutfish(SCOUTFISH_EXEC)
+                self.shared['scoutfish'] = self.scoutfish
+            else:
+                self.scoutfish = self.shared['scoutfish']
+
+            #Blocking task test
+            # self.run_background(self.blocking_task, self.on_complete_blocking_task, (10,))
+
             # moves = self.get_arguments("moves")
             # print self.get_argument("sorts")
             action = self.get_argument("action")
@@ -35,6 +93,15 @@ class ChessQueryHandler(BasicHandler):
             results = {}
 
             if action == "get_book_moves":
+                logging.info("get book moves::")
+                # selecting DB happens now
+                self.chessDB.open(MILLIONBASE_PGN)
+                results = self.chessDB.find(fen, max_offsets=10)
+                # print(type(results))
+
+                # for m in results['moves']:
+                #     print(m)
+
                 m = {}
                 m['pct'] = 100
                 m['freq'] = 100
@@ -97,6 +164,8 @@ class ChessQueryHandler(BasicHandler):
                 self.write(jsonp)
             else:
                 self.write(results)
+
+            self.finish()
 
 
 

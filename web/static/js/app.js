@@ -159,7 +159,7 @@ $(function() {
             url: backend_server_prefix + '/query?callback=game_callback',
             data: {
                 action: 'get_game_content',
-                game_num: $(this).attr('data-game-id'),
+                game_offset: $(this).attr('data-game-id'),
                 db: window.activedb
             }
         }).done(function(data) {
@@ -659,8 +659,8 @@ var onSnapEnd = function(source, target) {
     updateCurrentPosition(move, tmp_game);
     board.position(currentPosition.fen);
     updateStatus();
-    $.post('/channel', {action: 'move', fen: currentPosition.fen, source: source, target: target}, function(data) {
-    });
+//    $.post('/channel', {action: 'move', fen: currentPosition.fen, source: source, target: target}, function(data) {
+//    });
 };
 
 var updateStatus = function() {

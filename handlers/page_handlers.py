@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 import tornado
 import chess
@@ -12,7 +13,7 @@ from tornado.ioloop import IOLoop
 from tornado.web import asynchronous
 from multiprocessing.pool import ThreadPool
 
-_workers = ThreadPool(5)
+_workers = ThreadPool(10)
 
 SCOUTFISH_EXEC = './external/scoutfish'
 CHESSDB_EXEC = './external/parser'
@@ -40,130 +41,100 @@ class ChessQueryHandler(BasicHandler):
 
         _workers.apply_async(func, args, kwds, _callback)
 
-    # blocking task like querying to MySQL
-    def blocking_task(self, n):
-        # time.sleep(n)
-        logging.info("called blocking task")
-        # if not self.get_user_cookie_hash() in self.shared:
-        #     self.start_cloud_engine()
-        time.sleep(10)
-        logging.info("done with blocking task!!")
-        return n
-
-    def on_complete_blocking_task(self, res):
-        self.write("Blocking Task Complete {0}<br/>".format(res))
-        logging.info("on_complete_blocking_task")
+    def process_results(self, results):
+        if self.callback:
+            jsonp = "{jsfunc}({json});".format(jsfunc=self.callback,
+                                               json=json_encode(results))
+            self.set_header('Content-Type', 'application/javascript')
+            self.write(jsonp)
+        else:
+            self.write(results)
         self.finish()
 
     @asynchronous
     def get(self):
-        try:
-            ## This is created on server init
-            if 'chessDB' not in self.shared:
-                self.chessDB = chess_db.Parser(CHESSDB_EXEC)
-                self.shared['chessDB'] = self.chessDB
-                # print("Creating chessDB in shared")
-            else:
-                self.chessDB = self.shared['chessDB']
+        ## This is created on server init
+        if 'chessDB' not in self.shared:
+            self.chessDB = chess_db.Parser(CHESSDB_EXEC)
+            self.shared['chessDB'] = self.chessDB
+            # print("Creating chessDB in shared")
+        else:
+            self.chessDB = self.shared['chessDB']
 
-            ## This is created on server init
-            if 'scoutfish' not in self.shared:
-                self.scoutfish = scoutfish.Scoutfish(SCOUTFISH_EXEC)
-                self.shared['scoutfish'] = self.scoutfish
-            else:
-                self.scoutfish = self.shared['scoutfish']
+        ## This is created on server init
+        if 'scoutfish' not in self.shared:
+            self.scoutfish = scoutfish.Scoutfish(SCOUTFISH_EXEC)
+            self.shared['scoutfish'] = self.scoutfish
+        else:
+            self.scoutfish = self.shared['scoutfish']
 
-            #Blocking task test
-            # self.run_background(self.blocking_task, self.on_complete_blocking_task, (10,))
-
-            # moves = self.get_arguments("moves")
-            # print self.get_argument("sorts")
-            action = self.get_argument("action")
-            requested_db = self.get_argument("db", default=None)
-            # INDEX_DB = 'resources/polyglot_index.db'
-            # DATABASE = 'resources/game.db'
-
-            logging.info("requested_db: {0}".format(requested_db))
-
-            fen = self.get_argument("fen", default=None)
-            logging.info("fen : {0}".format(fen))
-            callback = self.get_argument('callback', default='')
-
-            records = []
-            results = {}
-
-            if action == "get_book_moves":
-                logging.info("get book moves :: ")
-                records = self.query_db(fen)
-
-                # Reverse sort by the number of games and select the top 5, otherwise all odd moves will show up..
-                records.sort(key=lambda x: x['games'], reverse=True)
-                results = {"records": records[:5]}
-
-            elif action == "get_games":
-                logging.info("get_games :: ")
-
-                records = self.query_db(fen)
-                # Reverse sort by the number of games and select the top 5, for a balanced representation of the games
-                records.sort(key=lambda x: x['games'], reverse=True)
-                filtered_records = records[:5]
-
-                filtered_game_offsets = []
-                # Limit number of games to 10 for now
-                for r in filtered_records:
-                    for offset in r['pgn offsets']:
-                        # print("offset: {0}".format(offset))
-                        if len(filtered_game_offsets) >= 10:
-                            break
-                        filtered_game_offsets.append(offset)
-
-                headers = self.chessDB.get_game_headers(self.chessDB.get_games(filtered_game_offsets))
-                results = {"records": headers, "queryRecordCount": 1,
-                           "totalRecordCount": len(headers)}
-
-            elif action == "get_game_content":
-                game_num = self.get_argument("game_num", default=0)
-                if game_num:
-                    print("game_num : {0}".format(game_num))
-                #     pgn = self.get_game(db_index, int(game_num))
-                #     # print "callback.."
-                #     if callback:
-                #         results = {"pgn": pgn}
-                #
-                #         jsonp="{jsfunc}({json});".format(jsfunc=callback,
-                #         json=json_encode(results))
-                #         self.set_header('Content-Type', 'application/javascript')
-                #         self.write(jsonp)
-                #     else:
-                #         for i, p in enumerate(pgn):
-                #             pgn[i] = re.sub(r'[^\x00-\x7F]+',' ', pgn[i])
-                #         # print(pgn[1])
-                #         results = {"pgn": pgn}
-                #
-                #         self.write(results)
-                #     return
-
-            if callback:
-                jsonp = "{jsfunc}({json});".format(jsfunc=callback,
-                    json=json_encode(results))
-                self.set_header('Content-Type', 'application/javascript')
-                self.write(jsonp)
-            else:
-                self.write(results)
-
+        # moves = self.get_arguments("moves")
+        # print self.get_argument("sorts")
+        action = self.get_argument("action", default=None)
+        requested_db = self.get_argument("db", default=None)
+        if not action:
+            logging.info("No action sent")
             self.finish()
 
+        logging.info("requested_db: {0}".format(requested_db))
+
+        # Assign fen to self as the self object is recreated every request anyway and it simplifies the callback mechanism
+        self.fen = self.get_argument("fen", default=None)
+        logging.info("fen : {0}".format(self.fen))
+        self.callback = self.get_argument('callback', default='')
+
+        # Use thread pool to process slower queries
+        self.run_background(self.process_request, self.process_results, (action,))
 
 
-                # 1. "get_book_moves" (fen), limit?
+    def process_request(self, action):
+        records = []
+        results = {}
+        fen = self.fen
+        if action == "get_book_moves":
+            # logging.info("get book moves :: ")
+            records = self.query_db(fen)
 
-                # print "starting fish"
-                # sf.add_observer
-                # sf.stop()
-                # sf.position('startpos', moves)
-                # sf.go(depth=1)
-        except tornado.web.MissingArgumentError:
-            pass
+            # Reverse sort by the number of games and select the top 5, otherwise all odd moves will show up..
+            records.sort(key=lambda x: x['games'], reverse=True)
+            results = {"records": records[:5]}
+
+        elif action == "get_games":
+
+            records = self.query_db(fen)
+            # Reverse sort by the number of games and select the top 5, for a balanced representation of the games
+            records.sort(key=lambda x: x['games'], reverse=True)
+            filtered_records = records[:5]
+
+            filtered_game_offsets = []
+            # Limit number of games to 10 for now
+            for r in filtered_records:
+                for offset in r['pgn offsets']:
+                    # print("offset: {0}".format(offset))
+                    if len(filtered_game_offsets) >= 10:
+                        break
+                    filtered_game_offsets.append(offset)
+
+            headers = self.chessDB.get_game_headers(self.chessDB.get_games(filtered_game_offsets))
+
+            # tag the offset to each header
+            for offset, h in zip(filtered_game_offsets, headers):
+                # Should be sent as ID for front end accounting purposes, in an odd way, the offset is the game id,
+                # as its the unique way to access the game
+                h["id"] = offset
+
+            results = {"records": headers, "queryRecordCount": 1,
+                       "totalRecordCount": len(headers)}
+
+        elif action == "get_game_content":
+            game_offset = self.get_argument("game_offset", default=0)
+            game_offset = int(game_offset)
+            if game_offset:
+                # Get first result as its just one game
+                pgn = self.chessDB.get_games([game_offset])[0]
+                # Split it up again as we need one line at a time for the frontend to parse it correctly
+                results = {"pgn": pgn.split(os.linesep)}
+        return results
 
     def query_db(self, fen, max_offsets = 10):
         records = []

@@ -2,7 +2,7 @@ import json
 import logging
 import time
 import tornado
-
+import chess
 
 from external import scoutfish
 from external import chess_db
@@ -93,29 +93,29 @@ class ChessQueryHandler(BasicHandler):
             results = {}
 
             if action == "get_book_moves":
-                logging.info("get book moves::")
+                logging.info("get book moves :: ")
                 # selecting DB happens now
                 self.chessDB.open(MILLIONBASE_PGN)
                 results = self.chessDB.find(fen, max_offsets=10)
                 # print(type(results))
+                board = chess.Board(fen)
 
-                # for m in results['moves']:
-                #     print(m)
-
-                m = {}
-                m['pct'] = 100
-                m['freq'] = 100
-                m['wins'] = 100
-                m['draws'] = 100
-                m['losses'] = 0
-                m['san'] = 'e4'
-                record = {'move': m['san'], 'pct': "{0:.2f}".format(m['pct']), 'freq': m['freq'], 'wins': m['wins'],
-                          'draws': m['draws'], 'losses': m['losses']}
-                # print record
-                records.append(record)
-                results = {"records": records}
+                for m in results['moves']:
+                    # print(m)
+                    m['san']= board.san(chess.Move.from_uci(m['move']))
+                    record = {'move': m['san'], 'pct': "{0:.2f}".format((m['wins']+m['draws']*0.5)*100.0/(m['wins']+m['draws']+m['losses'])), 'freq': m['games'], 'wins': m['wins'],
+                              'draws': m['draws'], 'losses': m['losses'], 'games': int(m['games'])}
+                    records.append(record)
+                # Reverse sort by the number of games and select the top 5, otherwise all odd moves will show up..
+                records.sort(key=lambda x: x['games'], reverse=True)
+                results = {"records": records[:5]}
 
             elif action == "get_games":
+                logging.info("get_games :: ")
+                # selecting DB happens now
+                # self.chessDB.open(MILLIONBASE_PGN)
+                # results = self.chessDB.find(fen, max_offsets=10)
+                # print(results)
                 g = {}
                 g['id'] = 1
                 g['white'] = 'w'

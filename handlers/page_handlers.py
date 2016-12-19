@@ -11,9 +11,6 @@ from handlers.basic_handler import BasicHandler
 from tornado.escape import json_encode
 from tornado.ioloop import IOLoop
 from tornado.web import asynchronous
-from multiprocessing.pool import ThreadPool
-
-_workers = ThreadPool(10)
 
 SCOUTFISH_EXEC = './external/scoutfish'
 CHESSDB_EXEC = './external/parser'
@@ -31,27 +28,16 @@ class ChessQueryHandler(BasicHandler):
     def initialize(self, shared=None):
         self.shared = shared
 
-    @staticmethod
-    def run_background(func, callback, args=(), kwds=None):
-        if not kwds:
-            kwds = {}
-
-        def _callback(result):
-            IOLoop.instance().add_callback(lambda: callback(result))
-
-        _workers.apply_async(func, args, kwds, _callback)
-
-    def process_results(self, results):
-        if self.callback:
-            jsonp = "{jsfunc}({json});".format(jsfunc=self.callback,
+    def process_results(self, results, callback):
+        if callback:
+            jsonp = "{jsfunc}({json});".format(jsfunc=callback,
                                                json=json_encode(results))
             self.set_header('Content-Type', 'application/javascript')
             self.write(jsonp)
         else:
             self.write(results)
-        self.finish()
+        # self.finish()
 
-    @asynchronous
     def get(self):
         ## This is created on server init
         if 'chessDB' not in self.shared:
@@ -74,23 +60,23 @@ class ChessQueryHandler(BasicHandler):
         requested_db = self.get_argument("db", default=None)
         if not action:
             logging.info("No action sent")
-            self.finish()
+            return
+            # self.finish()
 
         logging.info("requested_db: {0}".format(requested_db))
 
         # Assign fen to self as the self object is recreated every request anyway and it simplifies the callback mechanism
-        self.fen = self.get_argument("fen", default=None)
-        logging.info("fen : {0}".format(self.fen))
-        self.callback = self.get_argument('callback', default='')
+        fen = self.get_argument("fen", default=None)
+        logging.info("fen : {0}".format(fen))
+        callback = self.get_argument('callback', default='')
 
         # Use thread pool to process slower queries
-        self.run_background(self.process_request, self.process_results, (action,))
+        results = self.process_request(action, fen)
+        self.process_results(results, callback)
 
-
-    def process_request(self, action):
+    def process_request(self, action, fen):
         records = []
         results = {}
-        fen = self.fen
         if action == "get_book_moves":
             # logging.info("get book moves :: ")
             records = self.query_db(fen)

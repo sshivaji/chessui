@@ -4,6 +4,8 @@ import tornado.auth
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
+import tornado.wsgi
+import wsgiref.simple_server
 
 import base64
 import uuid
@@ -79,13 +81,18 @@ class Application(tornado.web.Application):
         self.mode = options.mode
         self.opts = options
 
+app = Application()
 
 if __name__ == "__main__":
     # application.listen(9999)
     # tornado.ioloop.IOLoop.instance().start()
 
-    http_server = tornado.httpserver.HTTPServer(Application())
-    http_server.listen(options.port)
-    logger = logging.getLogger('tcpserver')
-    logger.info("Starting server at {0}".format(options.port))
-    tornado.ioloop.IOLoop.instance().start()
+    wsgi_app = tornado.wsgi.WSGIAdapter(Application())
+    server = wsgiref.simple_server.make_server('', options.port, wsgi_app)
+    server.serve_forever()
+
+    # http_server = tornado.httpserver.HTTPServer(Application())
+    # http_server.listen(options.port)
+    # logger = logging.getLogger('tcpserver')
+    # logger.info("Starting server at {0}".format(options.port))
+    # tornado.ioloop.IOLoop.instance().start()

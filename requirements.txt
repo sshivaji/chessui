@@ -8,3 +8,4 @@ tornado==4.4.2
 configobj==5.0.6
 pexpect==4.2.1
 python-chess==0.16.1
+gunicorn==19.6.0

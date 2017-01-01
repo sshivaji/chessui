@@ -126,7 +126,7 @@ class ChessQueryHandler(BasicHandler):
         records = []
         # selecting DB happens now
         self.chessDB.open(MILLIONBASE_PGN)
-        results = self.chessDB.find(fen, max_offsets = max_offsets)
+        results = self.chessDB.find(fen, limit = max_offsets)
         board = chess.Board(fen)
         for m in results['moves']:
             # print(m)

@@ -87,21 +87,53 @@ class ChessQueryHandler(BasicHandler):
 
         elif action == "get_games":
 
-            records = self.query_db(fen)
+            # perPage = 20 & page = 2 & offset = 20
+            perPage = self.get_argument("perPage", default=10)
+            perPage = int(perPage)
+            # page = self.get_argument("page", default=1)
+            offset = self.get_argument("offset", default=0)
+            offset = int(offset)
+
+            print("perPage: {0}, offset: {1}".format(perPage, offset))
+
+            # convert to skip and limit logic
+            # offset = skip
+            # limit = perPage
+
+            records = self.query_db(fen, skip=offset, limit=perPage)
             # Reverse sort by the number of games and select the top 5, for a balanced representation of the games
             records.sort(key=lambda x: x['games'], reverse=True)
-            filtered_records = records[:5]
+            # For reporting purposes
+            total_result_count = sum(r['games'] for r in records)
 
+            filtered_records = records[:5]
             filtered_game_offsets = []
             # Limit number of games to 10 for now
+
+            # for r in records:
+            #     total_result_count += r['games']
+
             for r in filtered_records:
                 for offset in r['pgn offsets']:
                     # print("offset: {0}".format(offset))
-                    if len(filtered_game_offsets) >= 10:
+                    if len(filtered_game_offsets) >= perPage:
                         break
                     filtered_game_offsets.append(offset)
+                    # else:
+                    #     break
+                    # total_result_count += 1
 
+
+            print("filtered_game_offset count : {0}".format(len(filtered_game_offsets)))
             headers = self.chessDB.get_game_headers(self.chessDB.get_games(filtered_game_offsets))
+
+            print("offsets: ")
+            print(filtered_game_offsets)
+
+            # print("headers: ")
+            # for h in headers:
+            #     print(h)
+            # print("headers: {0}".format(headers))
 
             # tag the offset to each header
             for offset, h in zip(filtered_game_offsets, headers):
@@ -109,8 +141,8 @@ class ChessQueryHandler(BasicHandler):
                 # as its the unique way to access the game
                 h["id"] = offset
 
-            results = {"records": headers, "queryRecordCount": 1,
-                       "totalRecordCount": len(headers)}
+            results = {"records": headers, "queryRecordCount": total_result_count,
+                       "totalRecordCount": total_result_count}
 
         elif action == "get_game_content":
             game_offset = self.get_argument("game_offset", default=0)
@@ -122,11 +154,11 @@ class ChessQueryHandler(BasicHandler):
                 results = {"pgn": pgn.split(os.linesep)}
         return results
 
-    def query_db(self, fen, max_offsets = 10):
+    def query_db(self, fen, limit = 100, skip = 0):
         records = []
         # selecting DB happens now
         self.chessDB.open(MILLIONBASE_PGN)
-        results = self.chessDB.find(fen, limit = max_offsets)
+        results = self.chessDB.find(fen, limit = limit, skip = skip)
         board = chess.Board(fen)
         for m in results['moves']:
             # print(m)

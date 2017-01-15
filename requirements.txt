@@ -9,3 +9,6 @@ configobj==5.0.6
 pexpect==4.2.1
 python-chess==0.16.1
 gunicorn==19.6.0
+peewee
+pysqlite
+-e git+https://github.com/kalefranz/python-cjson#egg=python-cjson

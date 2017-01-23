@@ -1,4 +1,5 @@
 from peewee import *
+import argparse
 import csv
 import cjson as json
 import operator
@@ -13,30 +14,6 @@ DB_HEADER_MAP = {"White": 0, "WhiteElo": 1, "Black": 2,
                  "ECO": 8, INDEX_FILE_POS: 9, "FEN": 10, "PlyCount": 11, "EventDate": 12, "EventType": 13}
 
 # FRONTEND_TO_BACKEND_ATTR_MAP = {'White': 'white', 'White Elo'}
-
-db = SqliteDatabase('game.db')
-
-class Game(Model):
-    offset = IntegerField(primary_key=True)
-    offset_8 = IntegerField(index=True)
-    white = CharField(index=True)
-    white_elo = IntegerField(index=True)
-    black = CharField(index=True)
-    black_elo = IntegerField(index=True)
-    result = CharField(index=True)
-    date = DateField(index=True)
-    event = CharField(index=True)
-    site = CharField(index=True)
-    eco = CharField(index=True)
-
-    class Meta:
-        database = db
-
-    # def __str__(self):
-    #     return "White: {0}, white_elo: {1}, black: {2}, black_elo: {3}, result: {4}, date: {5}, event: {6}, site: {7}, " \
-    #            "eco: {8}".format(white, white_elo, black, black_elo, result, date, event, site, eco)
-    #
-
 
 def get_operator_fn(op):
     return {
@@ -201,71 +178,101 @@ def import_data(json_path):
     # "BlackElo": headers[3], "Result": headers[4], "Date": headers[5], "Event": headers[6], "Site": headers[7],
     # "ECO": headers[8]})
     # total_games-1
-    with db.transaction():
-        with open(json_path) as fp:
-            for i, line in enumerate(fp):
-                # print(line)
+    num_games = 0
+    batch = []
+    with open(json_path) as fp:
+        for i, line in enumerate(fp):
+            # print(line)
+            try:
+                j = json.decode(line)
+            except:
+                print(line)
+                raise
+                # line = line.replace("\", "\\")
+            try:
+                g = Game()
+                g.offset = j.get('offset', None)
+                g.offset_8 = j.get('offset_8', None)
+
+                g.white = j.get('White', None)
+                g.white_elo = j.get('WhiteElo', 2400)
+
+                g.black = j.get('Black', None)
+                g.black_elo = j.get('BlackElo', 2400)
+                g.result = j.get('Result', None)
+                g.date = j.get('Date', None)
+                g.event = j.get('Event', None)
+                g.site = j.get('Site', None)
+                g.eco = j.get('ECO', '')
+
+                if g.white_elo == '*':
+                    g.white_elo = 0
+
+                if g.black_elo == '*':
+                    g.black_elo = 0
+
+                # batch.append(g)
+
                 try:
-                    j = json.decode(line)
-                except:
-                    print(line)
-                    raise
-                    # line = line.replace("\", "\\")
-                try:
-                    g = Game()
-                    g.offset = j.get('offset', None)
-                    g.offset_8 = j.get('offset_8', None)
-
-                    g.white = j.get('White', None)
-                    g.white_elo = j.get('WhiteElo', 2400)
-
-                    g.black = j.get('Black', None)
-                    g.black_elo = j.get('BlackElo', 2400)
-                    g.result = j.get('Result', None)
-                    g.date = j.get('Date', None)
-                    g.event = j.get('Event', None)
-                    g.site = j.get('Site', None)
-                    g.eco = j.get('ECO', '')
-
-                    if g.white_elo == '*':
-                        g.white_elo = 0
-
-                    if g.black_elo == '*':
-                        g.black_elo = 0
-
-                    try:
-                        g.save(force_insert=True)
-                    except ValueError:
-                        # raise
-                        print (g.white)
-                        print (g.white_elo)
-                        print (g.black)
-                        print (g.black_elo)
-                        print (g.result)
-                        print (g.date)
-                        print (g.event)
-                        print (g.site)
-                        print (g.eco)
-
-                except KeyError:
-                    print ("error getting game {0}".format(i))
+                    # Game.create(g)
+                    with db.atomic():
+                        g.save()
+                        # Game.create(g)
+                        # Game.insert_many(batch).execute()
+                        # print("num_games: {}".format(num_games))
+                        # num_games+=1
+                except ValueError:
+                    # raise
+                    print (g.white)
+                    print (g.white_elo)
+                    print (g.black)
+                    print (g.black_elo)
+                    print (g.result)
+                    print (g.date)
+                    print (g.event)
+                    print (g.site)
+                    print (g.eco)
 
                 if i % 10000 == 0:
                     print (i)
 
+            except KeyError:
+                print ("error getting game {0}".format(i))
+
+
+
 
 if __name__ == "__main__":
-    # query_data()
-    # leveldb_path = '/home/shiv/chess/shivchess/openings/white/white.pgn.db'
-    pgn_path = '/home/shiv/chess/chessui/bases/millionbase.headers.json'
-    # import_data(pgn_path)
-    # import_data_csv('game_metadata.csv')
-    # game = Game.create_table(fail_silently=True)
-    # db_index = PartitionedLevelDB(leveldb_path)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input_file', help='Input JSON path')
+    parser.add_argument('-o', '--output_file', default='game.db', help='Output DB path')
+
+    arg = parser.parse_args()
+    db = SqliteDatabase(arg.output_file)
+
+
+    class Game(Model):
+        offset = IntegerField(primary_key=True)
+        offset_8 = IntegerField(index=True)
+        white = CharField(index=True)
+        white_elo = IntegerField(index=True)
+        black = CharField(index=True)
+        black_elo = IntegerField(index=True)
+        result = CharField(index=True)
+        date = DateField(index=True)
+        event = CharField(index=True)
+        site = CharField(index=True)
+        eco = CharField(index=True)
+
+        class Meta:
+            database = db
+
+            # def __str__(self):
+            #     return "White: {0}, white_elo: {1}, black: {2}, black_elo: {3}, result: {4}, date: {5}, event: {6}, site: {7}, " \
+            #            "eco: {8}".format(white, white_elo, black, black_elo, result, date, event, site, eco)
+            #
+
+    import_data(arg.input_file)
     games = query_data(Game, limit=10)
-    # print games
-#    for g in games:
- #       print g.id
-        # print get_game(db_index, g.id)
-        # print db_index.Get("game_{0}_data".format(g.id), regular=True)
 

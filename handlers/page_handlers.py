@@ -28,6 +28,17 @@ MILLIONBASE_SQLITE = './bases/millionbase.sqlite'
 
 SQLITE_GAME_LIMIT = 990
 
+GAME_UI_DB = {
+    "White": "white",
+    "WhiteElo": "white_elo",
+    "Black": "black",
+    "BlackElo": "black_elo",
+    "Result": "result",
+    "Date": "date",
+    "Event": "event",
+    "Site": "site"
+}
+
 
 class SortKey(object):
     def __init__(self, name, direction):
@@ -158,17 +169,17 @@ class ChessQueryHandler(BasicHandler):
                     # query = query.where((Game.black ** ('%%%s%%' % (t))) | (Game.white ** ('%%%s%%' % (t))))
                     # query = query.where(Game.black ** ('%%%s%%' % (t)))
 
-        # if len(game_ids) <= SQLITE_GAME_LIMIT:
-        #     query = query.where(getattr(Game, 'offset_8') << game_ids)
+        if 1 <= len(game_ids) <= SQLITE_GAME_LIMIT:
+            query = query.where(getattr(Game, 'offset_8') << game_ids)
 
         if order_by_list:
             # Construct peewee order by clause
             order_by_cond = []
             for sort_key in order_by_list:
                 if sort_key.direction > 0:
-                    order_by_cond.append(getattr(Game, sort_key.name).asc())
+                    order_by_cond.append(getattr(Game, GAME_UI_DB[sort_key.name]).asc())
                 else:
-                    order_by_cond.append(getattr(Game, sort_key.name).desc())
+                    order_by_cond.append(getattr(Game, GAME_UI_DB[sort_key.name]).desc())
 
             query = query.order_by(*order_by_cond)
             # getattr(Game,'black_elo').asc(), getattr(Game,'eco').asc()
@@ -193,14 +204,14 @@ class ChessQueryHandler(BasicHandler):
 
     def process_request(self, action, fen):
         # records = []
-        results = {}
+        sql_results = {}
         if action == "get_book_moves":
             # logging.info("get book moves :: ")
             records = self.query_db(fen)
 
             # Reverse sort by the number of games and select the top 5, otherwise all odd moves will show up..
             records.sort(key=lambda x: x['games'], reverse=True)
-            results = {"records": records[:5]}
+            sql_results = {"records": records[:5]}
 
         elif action == "get_games":
             # perPage = 20 & page = 2 & offset = 20
@@ -261,6 +272,7 @@ class ChessQueryHandler(BasicHandler):
                     order_expr[num][col] = val
             print("search terms: {}".format(search_terms))
             # print("search terms: {}".format(search_terms))
+            print ("order_expr: {}".format(order_expr))
 
             for k in order_expr:
                 sort_key = columns[order_expr[k]['column']]
@@ -290,52 +302,45 @@ class ChessQueryHandler(BasicHandler):
             print("len (game_ids): {}".format(len(game_ids)))
             # total_result_count = len(game_ids)
 
-            if len(search_terms) > 0 and total_result_count > SQLITE_GAME_LIMIT:
-                # Some balancing to remove searched games not from the position given sqlite limit of 999 for the in clause
-                # If applying search term on more than 999 results, chances are, the paging does not have to be exact
-
-                _result_id_set = set()
-                results = self.query_sql_data(MILLIONBASE_SQLITE, game_ids=[], order_by_list=sort_list,
-                                              search_terms=search_terms)
-                game_ids = self.query_db(fen, skip=offset, limit=2000000)
-
-                print("results: {}".format(results))
-                print("game_ids: {}".format(game_ids))
-                for r in results:
-                    # print("result: {}".format(r))
-                    _result_id_set.add(r.offset)
-                # print("game_ids: {}".format(game_ids))
-                # print("len game_ids: {}".format(len(game_ids)))
-                # print game_ids
-                print("result_id_set : {0}".format(_result_id_set))
-                # print "game_ids size : {0}".format(len_game_ids)
-                intersection = [int(g) for g in game_ids if int(g) in _result_id_set]
-                # print intersection
-                print("intersection: {}".format(intersection))
-                game_ids = intersection
-                len_game_ids = len(game_ids)
-                # print "len_game_ids : {0}".format(len_game_ids)
-
             for r in filtered_records:
-                for offset in r['pgn offsets']:
+                for of in r['pgn offsets']:
                     # print("offset: {0}".format(offset))
                     if len(filtered_game_offsets) >= perPage:
                         break
-                    filtered_game_offsets.append(offset)
+                    filtered_game_offsets.append(of)
                     # else:
                     #     break
                     # total_result_count += 1
+            print("total_result_count: {}".format(total_result_count))
+            print("len_search terms: {}".format(len(search_terms)))
+            if (len(search_terms) > 0) and total_result_count > SQLITE_GAME_LIMIT:
+                # print("In search terms block")
+                # Some balancing to remove searched games not from the position given sqlite limit of 999 for the in clause
+                # If applying search term on more than 999 sql_results, chances are, the paging does not have to be exact
+                game_ids = []
+                # _result_id_set = set()
+                sql_results = self.query_sql_data(MILLIONBASE_SQLITE, game_ids=[], order_by_list=sort_list,
+                                              search_terms=search_terms)
+                large_records = self.query_db(fen, limit=3000000)
+                for r in large_records:
+                    game_ids.extend(r['pgn offsets'])
+
+                game_id_set = set(game_ids)
+
+
+                intersection = [g.offset for g in sql_results if g.offset in game_id_set]
+
+                filtered_game_offsets = intersection[offset:offset+perPage]
+                print("offset: {}".format(offset))
+                print("offset+perpage: {}".format(offset+perPage))
+
+                print("filtered_game_offsets after pagination: {}".format(filtered_game_offsets))
+                total_result_count = len(intersection)
+
 
             print("filtered_game_offset count : {0}".format(len(filtered_game_offsets)))
             headers = self.chessDB.get_game_headers(self.chessDB.get_games(filtered_game_offsets))
 
-            print("offsets: ")
-            print(filtered_game_offsets)
-
-            # print("headers: ")
-            # for h in headers:
-            #     print(h)
-            # print("headers: {0}".format(headers))
 
             # tag the offset to each header
             for offset, h in zip(filtered_game_offsets, headers):
@@ -343,7 +348,7 @@ class ChessQueryHandler(BasicHandler):
                 # as its the unique way to access the game
                 h["id"] = offset
 
-            results = {"records": headers, "queryRecordCount": total_result_count,
+            sql_results = {"records": headers, "queryRecordCount": total_result_count,
                        "totalRecordCount": total_result_count}
 
         elif action == "get_game_content":
@@ -353,8 +358,8 @@ class ChessQueryHandler(BasicHandler):
                 # Get first result as its just one game
                 pgn = self.chessDB.get_games([game_offset])[0]
                 # Split it up again as we need one line at a time for the frontend to parse it correctly
-                results = {"pgn": pgn.split(os.linesep)}
-        return results
+                sql_results = {"pgn": pgn.split(os.linesep)}
+        return sql_results
 
     def query_db(self, fen, limit = 100, skip = 0):
         records = []

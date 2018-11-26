@@ -10,7 +10,7 @@ cp scoutfish/src/scoutfish.py ./external
 
 if [ ! -d chess_db ]; then
 	echo "chess_db git glone"
-        git clone https://github.com/mcostalba/chess_db
+        git clone https://github.com/sshivaji/chess_db
 fi
 cd chess_db;git pull; cd ..
 cd chess_db/parser;make build ARCH=x86-64; cd ../..

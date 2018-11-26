@@ -5,6 +5,11 @@ import cjson as json
 import operator
 import os
 
+import logging
+logger = logging.getLogger('peewee')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
+
 INDEX_TOTAL_GAME_COUNT = "total_game_count"
 SQLITE_GAME_LIMIT = 990
 INDEX_FILE_POS = "last_pos"
@@ -185,12 +190,14 @@ def import_data(json_path):
             # print(line)
             try:
                 j = json.decode(line)
+                # print(j)
             except:
                 print(line)
                 raise
                 # line = line.replace("\", "\\")
             try:
                 g = Game()
+
                 g.offset = j.get('offset', None)
                 g.offset_8 = j.get('offset_8', None)
 
@@ -211,35 +218,34 @@ def import_data(json_path):
                 if g.black_elo == '*':
                     g.black_elo = 0
 
-                # batch.append(g)
+                batch.append(g.as_dict())
 
                 try:
                     # Game.create(g)
-                    with db.atomic():
-                        g.save()
+                    # with db.atomic():
+                    if i % 10000 == 0:
+                        print(i)
+                    # g.save()
                         # Game.create(g)
-                        # Game.insert_many(batch).execute()
-                        # print("num_games: {}".format(num_games))
+                        with db.atomic():
+                            Game.insert_many(batch).execute()
+                            batch = []
+                            # print("num_games: {}".format(num_games))
                         # num_games+=1
                 except ValueError:
                     # raise
-                    print (g.white)
-                    print (g.white_elo)
-                    print (g.black)
-                    print (g.black_elo)
-                    print (g.result)
-                    print (g.date)
-                    print (g.event)
-                    print (g.site)
-                    print (g.eco)
-
-                if i % 10000 == 0:
-                    print (i)
+                    print(g.white)
+                    print(g.white_elo)
+                    print(g.black)
+                    print(g.black_elo)
+                    print(g.result)
+                    print(g.date)
+                    print(g.event)
+                    print(g.site)
+                    print(g.eco)
 
             except KeyError:
-                print ("error getting game {0}".format(i))
-
-
+                print("error getting game {0}".format(i))
 
 
 if __name__ == "__main__":
@@ -273,6 +279,20 @@ if __name__ == "__main__":
             #            "eco: {8}".format(white, white_elo, black, black_elo, result, date, event, site, eco)
             #
 
-    import_data(arg.input_file)
+        def as_dict(self):
+            return {
+                'offset': self.offset,
+                'offset_8': self.offset_8,
+                'white': self.white,
+                'white_elo': self.white_elo,
+                'black': self.black,
+                'black_elo': self.black_elo,
+                'result': self.result,
+                'date': self.date,
+                'event': self.event,
+                'site': self.site,
+                'eco': self.eco,
+                }
+    # import_data(arg.input_file)
     games = query_data(Game, limit=10)
 

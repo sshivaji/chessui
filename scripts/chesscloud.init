@@ -1,0 +1,37 @@
+#!/bin/sh
+# chkconfig: 123456 90 10
+# Chess Cloud service
+#
+workdir=/home/shiv/chessui
+ 
+start() {
+    cd $workdir
+    ./run.sh >/var/log/chesscloud.log 2>&1&
+    echo "Server started."
+}
+ 
+stop() {
+    #pid=`ps -ef | grep '[g]unicorn' | awk '{ print $2 }'`
+    #echo $pid
+    #kill $pid
+    killall gunicorn
+    sleep 1
+    echo "Server killed."
+}
+ 
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop   
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  *)
+    echo "Usage: /etc/init.d/chesscloud {start|stop|restart}"
+    exit 1
+esac
+exit 0

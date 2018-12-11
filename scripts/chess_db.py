@@ -193,7 +193,7 @@ def import_data(json_path):
                 # print(j)
             except:
                 print(line)
-                raise
+               # raise
                 # line = line.replace("\", "\\")
             try:
                 g = Game()
@@ -293,6 +293,6 @@ if __name__ == "__main__":
                 'site': self.site,
                 'eco': self.eco,
                 }
-    # import_data(arg.input_file)
+    import_data(arg.input_file)
     games = query_data(Game, limit=10)
 

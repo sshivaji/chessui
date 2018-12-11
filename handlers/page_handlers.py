@@ -108,7 +108,7 @@ class ChessQueryHandler(BasicHandler):
         self.process_results(results, callback)
 
     def query_sql_data(self, db, game_ids=None, order_by_list=None, page_number=None, items_per_page=None,
-                       search_terms=None):
+                       search_terms=None, limit=None):
 
         sqlite_db = SqliteDatabase(db)
 
@@ -183,10 +183,14 @@ class ChessQueryHandler(BasicHandler):
 
             query = query.order_by(*order_by_cond)
             # getattr(Game,'black_elo').asc(), getattr(Game,'eco').asc()
+        if limit:
+            query = query.limit(limit)
         if page_number and items_per_page:
             query = query.paginate(page_number, items_per_page)
         else:
             print("no page number")
+
+
 
         # print(query.desc)
         # query = query.limit(10)
@@ -313,20 +317,23 @@ class ChessQueryHandler(BasicHandler):
                     # total_result_count += 1
             print("total_result_count: {}".format(total_result_count))
             print("len_search terms: {}".format(len(search_terms)))
-            if (len(search_terms) > 0) and total_result_count > SQLITE_GAME_LIMIT:
+            if (len(search_terms) > 0 or len(sort_list) > 0) and total_result_count > SQLITE_GAME_LIMIT:
                 # print("In search terms block")
                 # Some balancing to remove searched games not from the position given sqlite limit of 999 for the in clause
                 # If applying search term on more than 999 sql_results, chances are, the paging does not have to be exact
                 game_ids = []
                 # _result_id_set = set()
-                sql_results = self.query_sql_data(MILLIONBASE_SQLITE, game_ids=[], order_by_list=sort_list,
+                if search_terms:
+                    sql_results = self.query_sql_data(MILLIONBASE_SQLITE, game_ids=[], order_by_list=sort_list,
                                               search_terms=search_terms)
+                else:
+                    sql_results = self.query_sql_data(MILLIONBASE_SQLITE, game_ids=[], order_by_list=sort_list,
+                                                      limit=3000)
                 large_records = self.query_db(fen, limit=3000000)
                 for r in large_records:
                     game_ids.extend(r['pgn offsets'])
 
                 game_id_set = set(game_ids)
-
 
                 intersection = [g.offset for g in sql_results if g.offset in game_id_set]
 

@@ -223,7 +223,7 @@ def import_data(json_path):
                 try:
                     # Game.create(g)
                     # with db.atomic():
-                    if i % 10000 == 0:
+                    if i % 20000 == 0:
                         print(i)
                     # g.save()
                         # Game.create(g)
@@ -243,10 +243,14 @@ def import_data(json_path):
                     print(g.event)
                     print(g.site)
                     print(g.eco)
-
+            
             except KeyError:
                 print("error getting game {0}".format(i))
-
+    with db.atomic():
+        if batch:
+            Game.insert_many(batch).execute()
+            batch = []
+   
 
 if __name__ == "__main__":
 
@@ -260,16 +264,16 @@ if __name__ == "__main__":
 
     class Game(Model):
         offset = IntegerField(primary_key=True)
-        offset_8 = IntegerField(index=True)
-        white = CharField(index=True)
-        white_elo = IntegerField(index=True)
-        black = CharField(index=True)
-        black_elo = IntegerField(index=True)
-        result = CharField(index=True)
-        date = DateField(index=True)
-        event = CharField(index=True)
-        site = CharField(index=True)
-        eco = CharField(index=True)
+        offset_8 = IntegerField(index=True, null=True)
+        white = CharField(index=True, null=True)
+        white_elo = IntegerField(index=True, null=True)
+        black = CharField(index=True, null=True)
+        black_elo = IntegerField(index=True, null=True)
+        result = CharField(index=True, null=True)
+        date = DateField(index=True, null=True)
+        event = CharField(index=True, null = True)
+        site = CharField(index=True, null=True)
+        eco = CharField(index=True, null=True)
 
         class Meta:
             database = db

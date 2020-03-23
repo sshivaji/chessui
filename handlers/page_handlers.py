@@ -23,7 +23,10 @@ logger.setLevel(logging.DEBUG)
 
 SCOUTFISH_EXEC = './external/scoutfish'
 CHESSDB_EXEC = './external/parser'
+
+#MILLIONBASE_PGN = './bases/openings.pgn'
 MILLIONBASE_PGN = './bases/millionbase.pgn'
+#MILLIONBASE_SQLITE = './bases/openings.sqlite'
 MILLIONBASE_SQLITE = './bases/millionbase.sqlite'
 
 SQLITE_GAME_LIMIT = 990
@@ -62,9 +65,11 @@ class ChessQueryHandler(BasicHandler):
         self.shared = shared
 
     def process_results(self, results, callback):
+        #results = results.decode('cp1252').encode('utf-8')
+
         if callback:
             jsonp = "{jsfunc}({json});".format(jsfunc=callback,
-                                               json=json_encode(results))
+                                               json=results)
             self.set_header('Content-Type', 'application/javascript')
             self.write(jsonp)
         else:
@@ -378,7 +383,7 @@ class ChessQueryHandler(BasicHandler):
             # print(m)
             m['san'] = board.san(chess.Move.from_uci(m['move']))
             record = {'move': m['san'], 'pct': "{0:.2f}".format(
-                (m['wins'] + m['draws'] * 0.5) * 100.0 / (m['wins'] + m['draws'] + m['losses'])), 'freq': m['games'],
+                (m['wins'] + m['draws'] * 0.5) * 100.0 / (m['wins'] + m['draws'] + m['losses']+0.000000000001)), 'freq': m['games'],
                       'wins': m['wins'],
                       'draws': m['draws'], 'losses': m['losses'], 'games': int(m['games']), 'pgn offsets': m['pgn offsets']}
             records.append(record)

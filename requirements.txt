@@ -6,11 +6,11 @@ Werkzeug==0.15.3
 requests==2.20.0
 tornado==4.4.2
 configobj==5.0.6
-pexpect==4.2.1
+pexpect==4.8
 python-chess==0.16.1
 gunicorn==19.6.0
 peewee==3.7.1
-pysqlite
+#pysqlite
 SQLAlchemy==1.1.7
 ujson
--e git+https://github.com/kalefranz/python-cjson#egg=python-cjson
+#-e git+https://github.com/kalefranz/python-cjson#egg=python-cjson

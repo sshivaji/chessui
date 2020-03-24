@@ -240,7 +240,7 @@ class ChessQueryHandler(BasicHandler):
             search_terms = []
             order_expr = {}
             columns = {}
-            for k, v in self.request.arguments.iteritems():
+            for k, v in self.request.arguments.items():
                 if k.startswith('sorts['):
                     m = re.findall('sorts\[(.*?)\]', k, re.DOTALL)
                     sort_key = m[0]

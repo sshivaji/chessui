@@ -1,7 +1,6 @@
 from peewee import *
 import argparse
 import csv
-import cjson as json
 import operator
 import os
 

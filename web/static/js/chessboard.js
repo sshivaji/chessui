@@ -254,8 +254,8 @@ var ANIMATION_HAPPENING = false,
 // JS Util Functions
 //------------------------------------------------------------------------------
 
-// http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-function createId() {
+// http://tinyurl.com/3ttloxj
+function uuid() {
   return 'xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xxxx'.replace(/x/g, function(c) {
     var r = Math.random() * 16 | 0;
     return r.toString(16);
@@ -439,10 +439,17 @@ function expandConfig() {
   }
 
   // default piece theme is wikipedia
+//  console.log (cfg.pieceTheme);
   if (cfg.hasOwnProperty('pieceTheme') !== true ||
       (typeof cfg.pieceTheme !== 'string' &&
        typeof cfg.pieceTheme !== 'function')) {
-    cfg.pieceTheme = '/static/img/chesspieces/alpha/{piece}.png';
+    cfg.pieceTheme = 'static/img/chesspieces/wikipedia/{piece}.png';
+  }
+
+  // default color board theme
+  if (cfg.hasOwnProperty('boardTheme') !== true ||
+      cfg.boardTheme.length != 2 ){
+    cfg.boardTheme = ["#f0d9b5", "#b58863"];
   }
 
   // animation speeds
@@ -499,7 +506,7 @@ function expandConfig() {
 // fudge factor, and then keep reducing until we find an exact mod 8 for
 // our square size
 function calculateSquareSize() {
-  var containerWidth = parseInt(containerEl.css('width'), 10);
+  var containerWidth = parseInt(containerEl.width(), 10);
 
   // defensive, prevent infinite loop
   if (! containerWidth || containerWidth <= 0) {
@@ -522,7 +529,7 @@ function createElIds() {
   for (var i = 0; i < COLUMNS.length; i++) {
     for (var j = 1; j <= 8; j++) {
       var square = COLUMNS[i] + j;
-      SQUARE_ELS_IDS[square] = square + '-' + createId();
+      SQUARE_ELS_IDS[square] = square + '-' + uuid();
     }
   }
 
@@ -531,8 +538,8 @@ function createElIds() {
   for (var i = 0; i < pieces.length; i++) {
     var whitePiece = 'w' + pieces[i];
     var blackPiece = 'b' + pieces[i];
-    SPARE_PIECE_ELS_IDS[whitePiece] = whitePiece + '-' + createId();
-    SPARE_PIECE_ELS_IDS[blackPiece] = blackPiece + '-' + createId();
+    SPARE_PIECE_ELS_IDS[whitePiece] = whitePiece + '-' + uuid();
+    SPARE_PIECE_ELS_IDS[blackPiece] = blackPiece + '-' + uuid();
   }
 }
 
@@ -696,7 +703,7 @@ function animateSquareToSquare(src, dest, piece, completeFn) {
 
   // create the animated piece and absolutely position it
   // over the source square
-  var animatedPieceId = createId();
+  var animatedPieceId = uuid();
   $('body').append(buildPiece(piece, true, animatedPieceId));
   var animatedPieceEl = $('#' + animatedPieceId);
   animatedPieceEl.css({
@@ -711,7 +718,7 @@ function animateSquareToSquare(src, dest, piece, completeFn) {
 
   // on complete
   var complete = function() {
-    // add the "real" piece to the destination square
+    //  the "real" piece to the destination square
     destSquareEl.append(buildPiece(piece));
 
     // remove the animated piece
@@ -737,7 +744,7 @@ function animateSparePieceToSquare(piece, dest, completeFn) {
   var destOffset = destSquareEl.offset();
 
   // create the animate piece
-  var pieceId = createId();
+  var pieceId = uuid();
   $('body').append(buildPiece(piece, true, pieceId));
   var animatedPieceEl = $('#' + pieceId);
   animatedPieceEl.css({
@@ -772,6 +779,10 @@ function animateSparePieceToSquare(piece, dest, completeFn) {
 
 // execute an array of animations
 function doAnimations(a, oldPos, newPos) {
+  if (a.length === 0) {
+    return;
+  }
+
   ANIMATION_HAPPENING = true;
 
   var numFinished = 0;
@@ -975,9 +986,22 @@ function drawPositionInstant() {
   }
 }
 
+function addBoardTheme() {
+  var wcol = cfg.boardTheme[0];
+  var bcol = cfg.boardTheme[1];
+
+  containerEl.find(".white-1e1d7").css("background-color", wcol)
+  containerEl.find(".white-1e1d7").css("color", bcol)
+
+  containerEl.find(".black-3c85d").css("background-color", bcol)
+  containerEl.find(".black-3c85d").css("color", wcol)
+
+
+}
 function drawBoard() {
   boardEl.html(buildBoard(CURRENT_ORIENTATION));
   drawPositionInstant();
+  addBoardTheme();
 
   if (cfg.sparePieces === true) {
     if (CURRENT_ORIENTATION === 'white') {
@@ -1311,7 +1335,7 @@ widget.fen = function() {
 
 // flip orientation
 widget.flip = function() {
-  widget.orientation('flip');
+  return widget.orientation('flip');
 };
 
 /*
@@ -1367,14 +1391,14 @@ widget.orientation = function(arg) {
   if (arg === 'white' || arg === 'black') {
     CURRENT_ORIENTATION = arg;
     drawBoard();
-    return;
+    return CURRENT_ORIENTATION;
   }
 
   // flip orientation
   if (arg === 'flip') {
     CURRENT_ORIENTATION = (CURRENT_ORIENTATION === 'white') ? 'black' : 'white';
     drawBoard();
-    return;
+    return CURRENT_ORIENTATION;
   }
 
   error(5482, 'Invalid value passed to the orientation method.', arg);
@@ -1628,8 +1652,8 @@ function addEvents() {
     mousedownSparePiece);
 
   // mouse enter / leave square
-  boardEl.on('mouseenter', '.' + CSS.square, mouseenterSquare);
-  boardEl.on('mouseleave', '.' + CSS.square, mouseleaveSquare);
+  boardEl.on('mouseenter', '.' + CSS.square, mouseenterSquare)
+    .on('mouseleave', '.' + CSS.square, mouseleaveSquare);
 
   // IE doesn't like the events on the window object, but other browsers
   // perform better that way
@@ -1637,12 +1661,12 @@ function addEvents() {
     // IE-specific prevent browser "image drag"
     document.ondragstart = function() { return false; };
 
-    $('body').on('mousemove', mousemoveWindow);
-    $('body').on('mouseup', mouseupWindow);
+    $('body').on('mousemove', mousemoveWindow)
+      .on('mouseup', mouseupWindow);
   }
   else {
-    $(window).on('mousemove', mousemoveWindow);
-    $(window).on('mouseup', mouseupWindow);
+    $(window).on('mousemove', mousemoveWindow)
+      .on('mouseup', mouseupWindow);
   }
 
   // touch drag pieces
@@ -1650,8 +1674,8 @@ function addEvents() {
     boardEl.on('touchstart', '.' + CSS.square, touchstartSquare);
     containerEl.on('touchstart', '.' + CSS.sparePieces + ' .' + CSS.piece,
       touchstartSparePiece);
-    $(window).on('touchmove', touchmoveWindow);
-    $(window).on('touchend', touchendWindow);
+    $(window).on('touchmove', touchmoveWindow)
+      .on('touchend', touchendWindow);
   }
 }
 
@@ -1669,7 +1693,7 @@ function initDom() {
   }
 
   // create the drag piece
-  var draggedPieceId = createId();
+  var draggedPieceId = uuid();
   $('body').append(buildPiece('wP', true, draggedPieceId));
   draggedPieceEl = $('#' + draggedPieceId);
 

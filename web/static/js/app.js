@@ -727,6 +727,7 @@ var updateStatus = function() {
     $('#' + stripped_fen).addClass('highlight');
 };
 
+//chess24_board_theme = ['#9E7863', '#633526'];
 
 var cfg = {
     showNotation: false,
@@ -734,7 +735,9 @@ var cfg = {
     position: 'start',
     onDragStart: onDragStart,
     onDrop: onDrop,
-    onSnapEnd: onSnapEnd
+    onSnapEnd: onSnapEnd,
+    pieceTheme: "static/img/chesspieces/chess24/{piece}.png",
+    boardTheme: chess24_board_theme
 };
 board = new ChessBoard('board', cfg);
 $(window).resize(board.resize);

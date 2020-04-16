@@ -24,3 +24,12 @@ fi
 cd pgnextractor;git pull; cd ..
 cd pgnextractor/parser;make build ARCH=x86-64; cd ../..
 cp pgnextractor/parser/pgnextractor ./external
+
+if [ ! -d ctgreader ]; then
+	echo "ctgreader git clone"
+	git clone https://github.com/sshivaji/ctgreader
+fi
+cd ctgreader; git pull; cd ..
+cd ctgreader; make; cd ..
+cp ctgreader/ctg_reader ./external
+

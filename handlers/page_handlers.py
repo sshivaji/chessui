@@ -17,6 +17,8 @@ from models import game_database as game_db
 from peewee import *
 
 import logging
+import subprocess
+
 logger = logging.getLogger('peewee')
 logger.setLevel(logging.DEBUG)
 # logger.addHandler(logging.StreamHandler())
@@ -25,9 +27,9 @@ SCOUTFISH_EXEC = './external/scoutfish'
 CHESSDB_EXEC = './external/parser'
 
 #MILLIONBASE_PGN = './bases/openings.pgn'
-MILLIONBASE_PGN = './bases/millionbase.pgn'
+MILLIONBASE_PGN = './bases/mega2020.pgn'
 #MILLIONBASE_SQLITE = './bases/openings.sqlite'
-MILLIONBASE_SQLITE = './bases/millionbase.sqlite'
+MILLIONBASE_SQLITE = './bases/mega2020.sqlite'
 
 SQLITE_GAME_LIMIT = 990
 
@@ -108,8 +110,11 @@ class ChessQueryHandler(BasicHandler):
         logging.info("fen : {0}".format(fen))
         callback = self.get_argument('callback', default='')
 
+        ctg_book_file = self.get_argument("ctg_book_file", default=None)
+
+
         # TODO: Use thread pool to process slower queries
-        results = self.process_request(action, fen)
+        results = self.process_request(action, fen, ctg_book_file=ctg_book_file)
         self.process_results(results, callback)
 
     def query_sql_data(self, db, game_ids=None, order_by_list=None, page_number=None, items_per_page=None,
@@ -211,16 +216,19 @@ class ChessQueryHandler(BasicHandler):
 
         return [p for p in query]
 
-    def process_request(self, action, fen):
+    def process_request(self, action, fen, ctg_book_file=None):
         # records = []
         sql_results = {}
+
         if action == "get_book_moves":
             # logging.info("get book moves :: ")
             records = self.query_db(fen)
 
             # Reverse sort by the number of games and select the top 5, otherwise all odd moves will show up..
             records.sort(key=lambda x: x['games'], reverse=True)
-            sql_results = {"records": records[:5]}
+            sql_results = {"records": records[:6]}
+        elif action == "get_ctg_book_moves":
+            sql_results = self.query_ctg_db(ctg_book_file, fen)
 
         elif action == "get_games":
             # perPage = 20 & page = 2 & offset = 20
@@ -372,6 +380,22 @@ class ChessQueryHandler(BasicHandler):
                 # Split it up again as we need one line at a time for the frontend to parse it correctly
                 sql_results = {"pgn": pgn.split(os.linesep)}
         return sql_results
+
+    def query_ctg_db(self, ctg_book_file, fen, limit = 0, skip = 0):
+        '''Find all games with positions equal to fen'''
+        if not ctg_book_file:
+            raise NameError("Unknown DB, specify a CTG file")
+
+        # cmd = "find {} limit {} skip {} {}".format(self.db, limit, skip, fen)
+        # print("cmd: {}".format(cmd))
+        else:
+            result = subprocess.check_output(
+            ["./external/ctg_reader", ctg_book_file, "{}".format(fen)])
+        # print("result: {}".format(result))
+            try:
+                return json.loads(result)
+            except json.decoder.JSONDecodeError:
+                return 'No result'
 
     def query_db(self, fen, limit = 100, skip = 0):
         records = []

@@ -260,18 +260,32 @@ class ChessQueryHandler(BasicHandler):
                     # 'queries[search]'
                 if k.startswith('queries['):
                     m = re.findall('queries\[(.*?)\]', k, re.DOTALL)
-                    if ' ' in v[0]:
-                        search_terms = v[0].split()
+                    search_terms = []
+                    print("v is {}".format(v))
+                    # for i, e in enumerate(v):
+                    #     v[i] = e.decode("utf-8")
+
+                    # v = v.decode("utf-8")
+                    entry = v[0]
+
+                    if isinstance(entry, bytes):
+                        entry = entry.decode("utf-8")
+                        print("decoded v..")
+                    if ' ' in entry:
+                        print("space char found")
+                        for term in entry.split():
+                            print("term: {}".format(term))
+                            search_terms.append(term)
                     else:
-                        search_terms = [v[0]]
+                        search_terms.append(entry)
                 # 'search[value]'
                 if k.startswith('search['):
                     m = re.findall('search\[(.*?)\]', k, re.DOTALL)
                     if m[0] == 'value' and v[0]:
                         if ' ' in v[0]:
-                            search_terms = v[0].split()
+                            search_terms = str(v[0]).split()
                         else:
-                            search_terms = [v[0]]
+                            search_terms = [str(v[0])]
 
                 if k.startswith('columns['):
                     m = re.findall('columns\[(.*?)\]\[(.*?)\]', k, re.DOTALL)
@@ -290,6 +304,11 @@ class ChessQueryHandler(BasicHandler):
             print("search terms: {}".format(search_terms))
             # print("search terms: {}".format(search_terms))
             print ("order_expr: {}".format(order_expr))
+            # modified_search_terms = []
+            # for s in search_terms:
+            #     modified_search_terms.append(str(s))
+            #
+            # search_terms = modified_search_terms
 
             for k in order_expr:
                 sort_key = columns[order_expr[k]['column']]
@@ -337,8 +356,11 @@ class ChessQueryHandler(BasicHandler):
                 game_ids = []
                 # _result_id_set = set()
                 if search_terms:
+                    # search_terms = ['Karpov']
                     sql_results = self.query_sql_data(MILLIONBASE_SQLITE, game_ids=[], order_by_list=sort_list,
                                               search_terms=search_terms)
+                    # print("search_sql_results: {}".format(sql_results))
+
                 else:
                     sql_results = self.query_sql_data(MILLIONBASE_SQLITE, game_ids=[], order_by_list=sort_list,
                                                       limit=3000)
@@ -346,17 +368,21 @@ class ChessQueryHandler(BasicHandler):
                 for r in large_records:
                     game_ids.extend(r['pgn offsets'])
 
+                # print("position_records: {}".format(large_records))
+
+                print("sql_results: {}".format(sql_results))
+
                 game_id_set = set(game_ids)
 
                 intersection = [g.offset for g in sql_results if g.offset in game_id_set]
 
-                filtered_game_offsets = intersection[offset:offset+perPage]
+                # filtered_game_offsets = intersection[offset:offset+perPage]
+                filtered_game_offsets = [g.offset for g in sql_results]
                 print("offset: {}".format(offset))
                 print("offset+perpage: {}".format(offset+perPage))
 
                 print("filtered_game_offsets after pagination: {}".format(filtered_game_offsets))
                 total_result_count = len(intersection)
-
 
             print("filtered_game_offset count : {0}".format(len(filtered_game_offsets)))
             headers = self.chessDB.get_game_headers(self.chessDB.get_games(filtered_game_offsets))

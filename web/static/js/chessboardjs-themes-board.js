@@ -1,4 +1,4 @@
-chess24_board_theme = ['#9E7863', '#633526'];
+chess24_board_theme = ['#FFCB98', '#AF5A00'];
 metro_board_theme = ['#EFEFEF', '#FFFFFF'];
 leipzig_board_theme = ['#FFFFFF', '#E1E1E1'];
 wikipedia_board_theme = ['#D18B47', '#FFCE9E'];

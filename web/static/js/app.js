@@ -756,6 +756,21 @@ $('#analyzeBtn').on('click', analyze_pressed);
 
 $('#analyzePlus').on('click', multipv_increase);
 $('#analyzeMinus').on('click', multipv_decrease);
+$('#setupBtn').on('click', setupBoard);
+
+
+$('#finishSetupBtn').on('click', finishSetupBoard);
+$('#cancelSetupBtn').on('click', cancelSetup);
+
+$('#clearSetupBtn').on('click', clearSetupBoard);
+$('#resetSetupBtn').on('click', resetSetupBoard);
+
+$('#cloudAnalyzeBtn').on('click', cloud_analyze_pressed);
+$('#cloudKillBtn').on('click', cloud_kill_pressed);
+
+$('#playBtn').on('click', play);
+
+
 
 
 function clickRowGameWriter(rowIndex, record, columns, cellWriter) {
@@ -785,6 +800,145 @@ function clickRowBookWriter(rowIndex, record, columns, cellWriter) {
 function clickRowBookReader(rowIndex, rowElement, record) {
     record.customData = $(rowElement).data('move');
 }
+
+function setupBoard() {
+//        board = null;
+    board.destroy();
+    var setup_cfg = {};
+    setup_cfg.sparePieces = true;
+    setup_cfg.dropOffBoard = 'trash';
+    setup_cfg.draggable = true;
+    setup_cfg.showNotation = false;
+
+//    var cfg = {
+//    showNotation: false,
+//    draggable: true,
+//    position: 'start',
+//    onDragStart: onDragStart,
+//    onDrop: onDrop,
+//    onSnapEnd: onSnapEnd,
+    setup_cfg.pieceTheme = "static/img/chesspieces/chess24/{piece}.png",
+    setup_cfg.boardTheme = chess24_board_theme;
+//};
+
+    board = new ChessBoard('board', setup_cfg);
+    $('#gameControls').hide();
+    $('#setupBoardControls').show();
+
+}
+
+function clearSetupBoard() {
+//    console.log("Clear setup board called");
+
+    board.clear(true);
+
+}
+function resetSetupBoard() {
+    var curr_fen;
+    if (currentPosition.fen) {
+        curr_fen = currentPosition.fen;
+    }
+    else {
+        curr_fen = START_FEN;
+    }
+//    console.log(START_FEN);
+    board.position(curr_fen, true);
+//    console.log(curr_fen);
+}
+
+function validateFen(fen) {
+    var tmp_game = new Chess();
+    var valid = tmp_game.load(fen);
+    console.log(fen);
+    return valid;
+}
+
+function cancelSetup() {
+    loadSetupFen(currentPosition.fen);
+}
+
+function loadSetupFen(fen) {
+    $('#gameControls').show();
+    $('#setupBoardControls').hide();
+//    clone_board = board;
+    board.destroy();
+    board = new ChessBoard('board', cfg);
+
+    board.position(fen);
+    currentPosition = {};
+    currentPosition.fen = fen;
+    setupBoardFen = fen;
+//        currentPosition.previous = null;
+    gameHistory = currentPosition;
+    gameHistory.gameHeader = '';
+    gameHistory.result = '';
+    gameHistory.variations = [];
+//        console.log(currentPosition.fe)
+
+    updateStatus();
+}
+function finishSetupBoard() {
+//    console.log(board.fen());
+
+    var can_castle = false;
+    var castling_fen = '';
+//    if s
+    var fen = board.fen();
+    console.log(fen);
+
+    if (!load_input_fen()) {
+//    if fen == ' 8/8/8/8/8/8/8/8'
+        var position = board.position();
+
+        if (position.e1 == "wK" && position.h1 == "wR") {
+            can_castle = true;
+            castling_fen += 'K';
+        }
+
+        if (position.e1 == "wK" && position.a1 == "wR") {
+            can_castle = true;
+            castling_fen += 'Q';
+        }
+
+//    console.log("board");
+//    console.log(board.position());
+
+        if (position.e8 == "bK" && position.h8 == "bR") {
+            can_castle = true;
+            castling_fen += 'k';
+        }
+
+        if (position.e8 == "bK" && position.a8 == "bR") {
+            can_castle = true;
+            castling_fen += 'q';
+        }
+
+
+        if (!can_castle) {
+            castling_fen = '-';
+        }
+
+        if ($('#whiteToMoveBtn').prop("checked")) {
+//        console.log("white to move");
+            fen += ' w';
+        }
+        else {
+//        console.log("black to move");
+            fen += ' b';
+        }
+        fen += " " + castling_fen + " - 0 1";
+
+        var valid = validateFen(fen);
+        if (!valid) {
+            console.log("Invalid FEN!");
+        }
+        else {
+            loadSetupFen(fen);
+        }
+    }
+
+}
+
 
 function addNewMove(m, current_position, fen, props) {
     var node = {};
@@ -1047,6 +1201,35 @@ function download() {
     dl.click();
 }
 
+function load_input_fen() {
+    var keyboard_input_fen = $("#fenInput").val();
+    if (keyboard_input_fen) {
+        var valid = validateFen(keyboard_input_fen);
+//        console.log(valid);
+//        console.log("Fen is "+fen);
+        if (!valid) {
+            console.log("Invalid FEN: " + keyboard_input_fen);
+        }
+        else {
+            loadSetupFen(keyboard_input_fen);
+            return true;
+        }
+    }
+    else {
+        return false;
+    }
+}
+$("#fenInput").keyup(function (e) {
+    if (e.keyCode == 13) {
+        load_input_fen();
+        // Do something
+
+//        console.log("Enter key pressed");
+//        console.log($("#fenInput").val());
+    }
+});
+
+
 function newBoard(fen) {
     stop_analysis();
 
@@ -1272,8 +1455,65 @@ function import_pv(e) {
     updateStatus();
 }
 
+function cloud_kill_pressed() {
+     $.post("/cloud", { action: "stop_cloud_engine"}, function (data) {
+//        var l = Ladda.create(this);
+//        l.stop();
+
+           clearInterval(window.cloud_update_interval);
+      });
+
+}
+
+function cloud_analyze_pressed(e) {
+//    e.stopPropagation();
+    console.log("cloud_analyze_pressed");
+    var l = Ladda.create(this);
+    l.start();
+
+    if (!window.cloud_analysis_engine) {
+        $.post("/cloud", { action: "start_cloud_engine"}, function (data) {
+            console.log("started cloud engine request");
+            window.cloud_analysis_engine = true;
+            window.cloud_update_interval = setInterval(updateCloudEngineOutput,1000);
+
+        }).always(function () {
+            l.stop();
+        });
+    } else {
+        console.log("Cloud engine initialized already");
+        l.stop();
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        window.cloud_analysis_engine = false;
+
+
+//        To save Amazon some electricity :)
+        $.post("/cloud", { action: "pause_cloud_engine"}, function (data) {
+//            console.log("started cloud engine request");
+//            window.cloud_analysis_engine = true;
+//            window.cloud_update_interval = setInterval(updateCloudEngineOutput,1000);
+
+        });
+
+
+        clearInterval(window.cloud_update_interval);
+        $('#engineStatus').html('');
+//        $('#engineMultiPVStatus').html(window.multipv + " lines");
+
+    }
+
+//    console.logs(l.isLoading());
+
+}
+
 function analyze_pressed() {
     analyze(false);
+}
+
+function play() {
+    console.log("Play!");
+
 }
 
 function stockfishPNACLModuleDidLoad() {

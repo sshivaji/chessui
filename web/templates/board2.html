@@ -64,16 +64,41 @@
                             <button type="button" id="fwdBtn" class="btn btn-default btn-xs"><i class='fa fa-arrow-right'></i></button>
                             <button type="button" id="endBtn" class="btn btn-default btn-xs"><i class='fa fa-fast-forward'></i></button>
                         </div>
+                                                <!-- This div is active only when setting up the board, its below the chess board-->
+                        <div id="setupBoardControls" class="panel-title pull-right" style="display:none" >
+                            <div class="row btn-group">
+                                <button type="button" id="clearSetupBtn" class="btn btn-default btn-xs">Clear</button>
+                                <button type="button" id="resetSetupBtn" class="btn btn-default btn-xs">Reset</button>
+                                <div id="setupBoardToMove" class="btn-group" data-toggle="buttons">
+                                    <label class="btn btn-default active btn-xs">
+                                        <input name="setupToMove" type="radio" value="white" id="whiteToMoveBtn" class=" btn btn-default btn-xs"  checked>White To Move
+                                    </label>
+                                    <label class="btn btn-default btn-xs">
+                                        <input name="setupToMove" type="radio" value="black" id="blackToMoveBtn" class="btn btn-default btn-xs">Black To Move
+                                    </label>
+                                </div>
+
+                            </div>
+
+                            <div class=" panel-title pull-right">
+                                <div class="input-group">
+                                    <input class="form-control" id="fenInput" type="text" value="" placeholder="Enter FEN">
+                                </div>
+
+                            </div>
+                            <div class=" panel-title">
+                                <button type="button" id="finishSetupBtn" class="btn btn-default btn-xs">Done</button>
+                            </div>
+                             <div class=" panel-title">
+                                <button type="button" id="cancelSetupBtn" class="btn btn-default btn-xs">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-xs-6">
-
-
-
-
 
             <div class="panel panel-primary">
                 <div class="panel-heading hidden-xs">
@@ -82,6 +107,15 @@
                         <button type="button" id="flipOrientationBtn" class="btn btn-raised btn-default btn-xs text-break">
                             <i class='fa fa-refresh'></i><span class="hidden-xs"> Flip</span>
                         </button>
+                        <div class="btn-group">
+                            <button type="button" id="setupBtn" class="btn btn-default btn-raised btn-xs text-break "><i class='fa fa-delicious'></i> Setup</button>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="button" id="newBtn" class="btn btn-default btn-raised btn-xs text-break "><i class='fa'></i> New</button>
+                        </div>
+
+
                         <!--<button type="button" id="DgtSyncBtn" class="btn btn-raised btn-warning btn-xs text-break">-->
                             <!--<i class='fa fa-delicious'></i><span class="hidden-xs"> Sync</span>-->
                         <!--</button>-->

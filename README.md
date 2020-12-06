@@ -1,7 +1,7 @@
 # chessui
 First time running and compile:
 
-1.- Install gcc, g++, gcc-multilibsb (if you are in x64 machine)
+1.- Install gcc, g++, gcc-multilib (if you are in x64 machine)
 
 2.- run ubuntu-deps.sh
 

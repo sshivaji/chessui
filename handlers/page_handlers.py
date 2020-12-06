@@ -27,9 +27,9 @@ SCOUTFISH_EXEC = './external/scoutfish'
 CHESSDB_EXEC = './external/parser'
 
 #MILLIONBASE_PGN = './bases/openings.pgn'
-MILLIONBASE_PGN = './bases/mega2020.pgn'
+MILLIONBASE_PGN = './bases/millionbase.pgn'
 #MILLIONBASE_SQLITE = './bases/openings.sqlite'
-MILLIONBASE_SQLITE = './bases/mega2020.sqlite'
+MILLIONBASE_SQLITE = './bases/millionbase.sqlite'
 
 SQLITE_GAME_LIMIT = 990
 

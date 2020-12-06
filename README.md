@@ -1,13 +1,14 @@
 # chessui
 First time running and compile:
 
-1.- Install gcc, g++, gcc-multilibs
+1.- Install gcc, g++, gcc-multilibsb (if you are in x64 machine)
 
 2.- run ubuntu-deps.sh
 
 3.- run first_time_setup.sh
 
 Second and following times
+
 1.- Execute ./run.sh
 
 OR

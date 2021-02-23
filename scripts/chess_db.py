@@ -192,6 +192,7 @@ def import_data(json_path):
                 # print(j)
             except:
                 print(line)
+                continue
                # raise
                 # line = line.replace("\", "\\")
             try:

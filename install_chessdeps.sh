@@ -32,4 +32,7 @@ fi
 cd ctgreader; git pull; cd ..
 cd ctgreader; make; cd ..
 cp ctgreader/ctg_reader ./external
-
+#apt-get install -y python3-virtualenv
+#pip install virtualenv
+#virtualenv -ppython3 chesspython
+#./chesspython/bin/pip install -r requirements.txt

@@ -15,9 +15,9 @@ if [ ! -f bases/famous_games.scout ]; then
 fi
 
 if [ ! -f bases/millionbase.db ]; then
-        /home/chess/.env/bin/python scripts/chess_db.py -i bases/millionbase.headers.json -o bases/millionbase.db
+        python scripts/chess_db.py -i bases/millionbase.headers.json -o bases/millionbase.db
 fi
 
 if [ ! -f bases/millionbase.sqlite ]; then
-    cd scripts; /home/chess/.env/bin/python chess_db.py -i ../bases/millionbase.headers.json -o ../bases/millionbase.sqlite
+    cd scripts; python chess_db.py -i ../bases/millionbase.headers.json -o ../bases/millionbase.sqlite; cd ..
 fi

@@ -2,7 +2,7 @@ ConfigArgParse==0.10.0
 Flask==1.0
 Jinja2>=2.10.1
 MarkupSafe==0.23
-Werkzeug==0.15.3
+Werkzeug==2.2.3
 requests==2.20.0
 tornado==4.4.2
 configobj==5.0.6
